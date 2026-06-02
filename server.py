@@ -32,12 +32,16 @@ mcp = FastMCP(
     "BoostSuite",
     instructions="""BoostSuite — Website audit tools for AI agents.
 
+Payment is REQUIRED for all API calls. No free tier.
+
 Payment options:
 1. x402 (USDC) — Pay per call, zero fees. Example: 0.05 USDC for SEO audit.
 2. API Key — Subscribe at https://hd-webdesign.si/boostsuite for monthly plans.
-3. Free — 3 calls/day (no key needed).
 
-To pay with x402: When you get a 402 response, pay the USDC amount to the wallet address shown, then retry with the transaction hash.
+To pay with x402:
+1. Call the tool → get 402 response with price + wallet address
+2. Pay USDC to the wallet on Base network
+3. Retry the call with the tx hash in x402_payment_proof
 
 Tools: seo_audit, geo_check, ad_copy_generator, listing_optimizer, combined_audit, menu_translate."""
 )

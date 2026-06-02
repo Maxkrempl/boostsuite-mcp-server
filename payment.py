@@ -125,10 +125,11 @@ def verify_x402_payment(tool_name: str, payment_proof: Optional[str] = None) -> 
 def check_payment(tool_name: str, api_key: Optional[str] = None,
                   x402_proof: Optional[str] = None) -> PaymentResult:
     """
-    Check payment for a tool call. Tries methods in order:
+    Check payment for a tool call. NO free tier for API/MCP.
+    Tries methods in order:
     1. API key (if provided)
     2. x402 payment (if proof provided)
-    3. Free tier (limited)
+    3. Otherwise → Payment Required
     """
     # Try API key first
     if api_key:
@@ -142,8 +143,8 @@ def check_payment(tool_name: str, api_key: Optional[str] = None,
         if result.success:
             return result
 
-    # Free tier — 3 calls per day (tracked by IP/session)
-    return PaymentResult(True, "free", "Free tier (3/day limit)")
+    # No free API calls — must pay or use key
+    return PaymentResult(False, "payment_required", "API access requires payment or API key")
 
 
 def get_payment_required_response(tool_name: str) -> dict:
