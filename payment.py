@@ -17,7 +17,7 @@ from typing import Optional
 BOOSTSUITE_API = os.environ.get("BOOSTSUITE_API", "https://hd-webdesign.si/api/functions")
 
 # x402 config (Coinbase)
-X402_WALLET = os.environ.get("X402_WALLET", "")  # USDC receiving wallet address
+X402_WALLET = os.environ.get("X402_WALLET", "0xA41A68D6c45d8E39a090648d2a0e602C0abF1275")  # USDC receiving wallet address
 X402_NETWORK = os.environ.get("X402_NETWORK", "base")  # base = low gas fees
 
 # Price list in USDC (x402 microtransactions)
@@ -73,29 +73,53 @@ def verify_x402_payment(tool_name: str, payment_proof: Optional[str] = None) -> 
     """
     Verify x402 payment for a specific tool call.
     
-    In production flow:
+    Flow:
     1. Agent calls tool → gets 402 Payment Required with price + wallet
-    2. Agent pays USDC to wallet
-    3. Agent retries with payment proof (tx hash)
-    4. We verify the tx on-chain
-    
-    For now, we accept if payment_proof is provided (trust-based).
+    2. Agent pays USDC to wallet on Base network
+    3. Agent retries with tx hash as payment_proof
+    4. We verify the tx on Base blockchain
     """
+    import httpx as _httpx
+
     if tool_name not in X402_PRICES:
         return PaymentResult(False, "x402", f"Unknown tool: {tool_name}")
 
     price = X402_PRICES[tool_name]
 
     if not payment_proof:
-        # Return payment required response
         return PaymentResult(
             False, "x402",
             f"Payment required: {price} USDC to {X402_WALLET} on {X402_NETWORK}"
         )
 
-    # TODO: Verify on-chain payment using Coinbase x402 API
-    # For now, trust the payment proof
-    return PaymentResult(True, "x402", f"Payment verified: {price} USDC")
+    # Verify on-chain via Base blockchain explorer (Blockscout API — free, no key)
+    try:
+        url = f"https://base.blockscout.com/api/v2/transactions/{payment_proof}"
+        resp = _httpx.get(url, timeout=10)
+        if resp.status_code != 200:
+            return PaymentResult(False, "x402", f"Transaction not found: {payment_proof}")
+
+        tx = resp.json()
+
+        # Check if transaction is successful
+        if tx.get("status") != "ok":
+            return PaymentResult(False, "x402", "Transaction failed or pending")
+
+        # Check recipient matches our wallet
+        to_addr = (tx.get("to") or {}).get("hash", "").lower()
+        if to_addr != X402_WALLET.lower():
+            return PaymentResult(False, "x402", f"Wrong recipient: {to_addr}")
+
+        # Check value (USDC has 6 decimals)
+        value = int(tx.get("value", "0"))
+        expected = int(price * 10**6)
+        if value < expected:
+            return PaymentResult(False, "x402", f"Insufficient: got {value/10**6} USDC, need {price}")
+
+        return PaymentResult(True, "x402", f"Verified: {price} USDC (tx: {payment_proof[:16]}...)")
+
+    except Exception as e:
+        return PaymentResult(False, "x402", f"Verification error: {str(e)}")
 
 
 def check_payment(tool_name: str, api_key: Optional[str] = None,
