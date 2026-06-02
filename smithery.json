@@ -1,7 +1,7 @@
 {
-  "name": "boosuite",
+  "name": "boostsuite-mcp-server",
   "displayName": "BoostSuite",
-  "description": "Website audit tools — SEO, GEO, performance, security, accessibility, GDPR compliance. For AI agents that need to analyze websites.",
+  "description": "Website audit tools — SEO, GEO, performance, security, accessibility, GDPR compliance. Hybrid payment: x402 (USDC) for agents, Stripe for humans.",
   "tools": [
     {
       "name": "seo_audit",
@@ -28,6 +28,6 @@
       "description": "Multilingual menu item descriptions (9 languages)"
     }
   ],
-  "categories": ["seo", "web-audit", "marketing", "accessibility", "security"],
-  "homepage": "https://hd-webdesign.si/boost-suite/"
+  "categories": ["seo", "web-audit", "marketing", "accessibility", "security", "crypto"],
+  "homepage": "https://hd-webdesign.si/boostsuite/"
 }
