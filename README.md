@@ -4,6 +4,12 @@ Website audit tools for AI agents — SEO, GEO, performance, security, accessibi
 
 **Hybrid Payment:** x402 (USDC crypto) for agents + Stripe for human subscribers.
 
+## Live Server
+
+**MCP Endpoint:** `https://hd-webdesign.si/api/mcp/`
+
+No installation needed — agents can connect directly via HTTP.
+
 ## Tools (6)
 
 | Tool | Description | Cost (x402) |
@@ -15,100 +21,112 @@ Website audit tools for AI agents — SEO, GEO, performance, security, accessibi
 | `combined_audit` | All-in-one comprehensive website audit | 0.15 USDC |
 | `menu_translate` | Multilingual menu item descriptions (9 languages) | 0.02 USDC |
 
-## Payment Options
+## Quick Start
 
-### 1. x402 (USDC) — For AI Agents
-- Pay per call, zero protocol fees
-- Works on Base network (low gas ~$0.001)
-- Agent pays autonomously, no human needed
-- [x402.org](https://x402.org)
-
-### 2. API Key — For Human Subscribers
-- **Free:** 100 calls/month
-- **Freelancer:** €19/month — 2,000 calls
-- **Agency:** €49/month — unlimited
-- Get your key: https://hd-webdesign.si/boostsuite/
-
-### 3. Free Tier
-- 3 calls/day, no key required
-- Good for testing and evaluation
-
-## Install
-
-### Via Smithery.ai (recommended)
-```bash
-npx -y @smithery/cli install @hercegdarko/boostsuite-mcp-server
-```
-
-### Manual
-```bash
-pip install mcp httpx
-python server.py
-```
-
-## Configuration
-
-Set environment variables:
-
-```bash
-# API endpoint (default: hd-webdesign.si)
-export BOOSTSUITE_API="https://hd-webdesign.si/api/functions"
-
-# x402 wallet for crypto payments (required for x402)
-export X402_WALLET="0xYourUSDCWalletAddress"
-export X402_NETWORK="base"
-```
-
-## Usage in Claude Desktop / Cursor / Hermes
-
-Add to your MCP config:
+### Remote (recommended)
+Point your MCP client to our hosted server:
 
 ```json
 {
   "mcpServers": {
     "boostsuite": {
-      "command": "python3",
-      "args": ["/path/to/server.py"],
-      "env": {
-        "X402_WALLET": "0xYourUSDCWalletAddress"
-      }
+      "url": "https://hd-webdesign.si/api/mcp/"
     }
   }
 }
 ```
 
-## How x402 Works
-
-1. Agent calls a tool (e.g., `seo_audit`)
-2. Server responds with `402 Payment Required` + price + wallet address
-3. Agent pays USDC to the wallet
-4. Agent retries with the transaction hash as proof
-5. Server verifies payment and returns the result
-
-```
-Agent → "Run SEO audit on example.com"
-Server → 402: Pay 0.05 USDC to 0xABC... on Base
-Agent → Pays USDC, gets tx hash
-Agent → Retries with x402_payment_proof
-Server → Returns audit results
+### Local Install
+```bash
+git clone https://github.com/Maxkrempl/boostsuite-mcp-server.git
+cd boostsuite-mcp-server
+python3 http-server.py
 ```
 
-## Example
+Then configure your MCP client:
+```json
+{
+  "mcpServers": {
+    "boostsuite": {
+      "url": "http://localhost:8787/mcp"
+    }
+  }
+}
+```
 
-Ask your AI agent:
-> "Run an SEO audit on https://example.com"
+## Payment
 
-The agent calls `seo_audit(url="https://example.com")` and returns the results.
+### No free API calls
+All API/MCP calls require payment. Browser visitors get 1 free audit on the web UI.
+
+### Option 1: x402 (USDC) — For AI Agents
+1. Call a tool → get `402 Payment Required` with price + wallet
+2. Pay USDC to the wallet on Base network
+3. Retry with tx hash in `X-Payment-Proof` header
+
+**Wallet:** `0xA41A68D6c45d8E39a090648d2a0e602C0abF1275` (Base)
+
+**Prices:**
+- SEO audit: 0.05 USDC
+- GEO check: 0.03 USDC
+- Ad copy: 0.05 USDC
+- Listing optimize: 0.04 USDC
+- Combined audit: 0.15 USDC
+- Menu translate: 0.02 USDC
+
+### Option 2: API Key — For Human Subscribers
+Subscribe at https://hd-webdesign.si/boostsuite/ and pass your key:
+
+```json
+{
+  "arguments": {
+    "url": "https://example.com",
+    "api_key": "bs_live_your_key_here"
+  }
+}
+```
+
+| Plan | Price | Calls/month |
+|------|-------|-------------|
+| Freelancer | €19/mo | 2,000 |
+| Agency | €49/mo | Unlimited |
+
+## Testing
+
+```bash
+# List tools
+curl -X POST https://hd-webdesign.si/api/mcp/ \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Run SEO audit (will return 402 without payment)
+curl -X POST https://hd-webdesign.si/api/mcp/ \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"seo_audit","arguments":{"url":"https://example.com"}}}'
+```
+
+## Architecture
+
+```
+Agent → https://hd-webdesign.si/api/mcp/ (PHP proxy)
+       → http://127.0.0.1:8787/mcp (Python MCP server)
+       → https://hd-webdesign.si/api/functions/*.php (BoostSuite API)
+```
+
+- **PHP proxy** (`api/mcp/index.php`) — routes requests to local MCP server
+- **Python MCP server** (`http-server.py`) — handles MCP protocol, payment checks
+- **BoostSuite API** (`api/functions/`) — actual audit/analysis logic
 
 ## API Endpoints
 
-All tools call these BoostSuite PHP endpoints:
-- `seo-audit.php` — SEO analysis
-- `geo-check.php` — AI visibility check
-- `ad-copy.php` — Ad copy generation
-- `listing-optimize.php` — Listing optimization
-- `combined-audit.php` — All-in-one audit
-- `translate.php` — Menu translation
+| Endpoint | Tool | Auth |
+|----------|------|------|
+| `seo-audit.php` | SEO audit | Required |
+| `geo-check.php` | GEO check | Required |
+| `ad-copy.php` | Ad copy | Required |
+| `listing-optimize.php` | Listing optimize | Required |
+| `combined-audit.php` | Combined audit | 1 free/browser, then required |
+| `translate.php` | Menu translate | Required |
 
 ## Powered by
 
