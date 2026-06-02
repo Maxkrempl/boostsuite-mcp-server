@@ -1,0 +1,33 @@
+{
+  "name": "boosuite",
+  "displayName": "BoostSuite",
+  "description": "Website audit tools — SEO, GEO, performance, security, accessibility, GDPR compliance. For AI agents that need to analyze websites.",
+  "tools": [
+    {
+      "name": "seo_audit",
+      "description": "Full SEO audit with score and recommendations"
+    },
+    {
+      "name": "geo_check",
+      "description": "AI search visibility check (ChatGPT, Gemini, Perplexity)"
+    },
+    {
+      "name": "ad_copy_generator",
+      "description": "Generate ad copy for Google, Facebook, Instagram, LinkedIn, email"
+    },
+    {
+      "name": "listing_optimizer",
+      "description": "Optimize product/service listings for marketplaces"
+    },
+    {
+      "name": "combined_audit",
+      "description": "All-in-one comprehensive website audit"
+    },
+    {
+      "name": "menu_translate",
+      "description": "Multilingual menu item descriptions (9 languages)"
+    }
+  ],
+  "categories": ["seo", "web-audit", "marketing", "accessibility", "security"],
+  "homepage": "https://hd-webdesign.si/boost-suite/"
+}
